@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import "./login.scss";
 import { Link, useNavigate } from "react-router-dom";
 import apiRequest from "../../lib/apiRequest";
+import { AuthContext } from "../../context/AuthContext";
 
 function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const { updateUser } = useContext(AuthContext);
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,15 +26,28 @@ function Login() {
         username,
         password,
       });
-      console.log(res);
-      localStorage.setItem("user", JSON.stringify(res.data));
+      console.log("Server response:", res);
 
-      navigate("/");
+      if (res.status === 200) {
+        // Store user info in local storage
+        localStorage.setItem("user", JSON.stringify(res.data));
+        console.log("User info stored in local storage:", res.data);
+
+        // Update user context
+        updateUser(res.data);
+        console.log("User context updated:", res.data);
+
+        // Navigate to home page
+        navigate("/");
+      } else {
+        setError("Login failed, please try again.");
+        console.log("Login failed:", res);
+      }
     } catch (err) {
-      console.log(err);
-      setError(err.response.data.message);
+      console.log("Error during login:", err);
+      setError(err.response?.data?.message || "Failed to login!");
     } finally {
-      isLoading(false);
+      setIsLoading(false);
     }
   };
 
